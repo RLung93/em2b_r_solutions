@@ -14,6 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 setwd('/home/rob/Documents/repos/em2b_r_solutions')
 pistonrings <- read.table("PistonRings.dat", header=TRUE)
 waves <- read.csv("WaveTest01.csv", header=TRUE)
+clash.2d <- read.csv("CLASH-2D.csv", header=TRUE)
+require(printr)
 ```
 
 This document contains solutions to the exercises from the \texttt{R} Workbook for EM2B in 2018/19. For many exercises there are alternative solutions that give slightly different answers that can be just as good or even better. Any typos or suggestions regarding this document should be directed to \href{mailto:s1778022@sms.ed.ac.uk}{s1778022@sms.ed.ac.uk}.
@@ -120,7 +122,7 @@ and if we write
 \[
 Y_i = \begin{cases}1 &\text{if} ~ X_i = 0 \\ 0 &\text{if} ~ X_i \neq 0\end{cases}
 \]
-If we define \(p_0 := \mathbb{P}(X_i = 0)\)then \(Y_i \stackrel{\text{iid}}{\sim} \mathsf{Bernoulli}(p_0) \). The loss of Mr Portly (in GBP) can then be written as 
+If we define \(p_0 := \mathbb{P}(X_i = 0)\) then \(Y_i \stackrel{\text{iid}}{\sim} \mathsf{Bernoulli}(p_0)\). The loss of Mr Portly (in GBP) can then be written as 
 \[
 100 \times \sum_{i = 1}^{10}Y_i \quad \implies \quad \text{Mr Portly's expected loss} = \mathbb{E}\left[100 \times \sum_{i = 1}^{10}Y_i\right] = 1000p_0
 \]
@@ -132,7 +134,7 @@ print(expected.loss)
 ```
 which is essentially nothing or slightly less than half a Penny on average to be precise. We conclude that Mr Portly won't loose any money in most cases. This comes from the fact that under the \(\mathsf{Poisson}\) assumption it is very unlikely that the volunteers will have a fault free segment.
 
-\textbf{SOlution 3 (b):} Since we identified the distribution we just need to plot the cdf of a \(\mathsf{Poisson}(12.3)\) random variable. Similarly as before we can do this with
+\textbf{Solution 3 (b):} Since we identified the distribution we just need to plot the cdf of a \(\mathsf{Poisson}(12.3)\) random variable. Similarly as before we can do this with
 ```{r, fig.height=3.5, fig.width=6, fig.align="center"}
 barplot(ppois(0:25, lambda = 12.3), 
         names.arg = 0:25, 
@@ -305,8 +307,338 @@ Unlike in the previous excercise here the samples deviate from the line not only
 shapiro.test(waves$Height)
 ```
 
-
+\newpage
 # Chapter 3
+\HRule\newline
+\textbf{Exercise 1:} The number of trucks arriving at a warehouse in over 500 one hour interval has
+been recorded. Counts of zero up to eight arrivals are recorded respectively
+on 52, 151, 130, 102, 45, 12, 5, 1 and 2 occasions. Test the hypothesis that these
+have a Poisson distribution and estimate how often there will be nine or more
+arrivals per hour.
+
+\vspace{6pt}\hrule
+\textbf{Solution 1 (a):} The exercise doesn't specify a parameter for the \(\mathsf{Poisson}\) distribution so we need to guess one ourselves. This is a subtle issue. If we assume that an oracle told us some parameter that is believed to be the true one (i.e. what will form the null hypothesis) then we could use that. This isn't the case so in some way the best we can do is calculate the average from the data and take that. In \texttt{R} this can be done with the following command
+```{r}
+(52*0 + 151*1 + 130*2 + 102*3 + 45*4 + 12*5 + 5*6 + 1*7 + 2*8) / 500
+```
+
+and we could test whether the data fits a \(\mathsf{Poisson}(2.02)\) distribution. \textbf{BUT} we have estimated a parameter from the data so we loose one degree of freedom (don't worry if that sounds new to you - it hasn't been treated in class as far as I know). This situation is briefly described in the book on page 947. Another issue is that the built-in \texttt{R} routine doesn't have a way to handle this (since it can't possibly know what we have estimated from the data there isn't really a way to implement this...). Let's first consider the situation where an oracle told us that the parameter we should consider is \(\lambda_0 = 2.5\). We can group the last three observations into a "\(> 5\)"- bin and calculate probabilities
+
+```{r, fig.height=3.5, fig.width=6, fig.align="center"}
+observed.trucks <- c(52, 151, 130, 102, 45, 12, 5 + 1 + 2)
+names(observed.trucks) <- c(as.character(0:5), ">5")
+print(observed.trucks)
+probabilities.H0 <- c(dpois(0:5, 2.5), 1-ppois(5,2.5))
+names(probabilities.H0) <- c(as.character(0:5), ">5")
+print(probabilities.H0)
+expected.trucks <- 500*probabilities.H0
+print(expected.trucks)
+barplot(t(cbind(expected.trucks,observed.trucks)), beside = TRUE,
+        ylab="Frequency", main = "expected (mean = 2.5) vs observed trucks")
+legend("topright", legend = c("expected", "observed"), fill=gray.colors(2))
+
+# perform standard chisq-test in R (reject with very strong evidence)
+chisq.test(x = observed.trucks, p = probabilities.H0)
+```
+
+Let's now do it as in the book and take away one degree of freedom as well as use the estimated parameter. A very similar procedure as before will give
+
+```{r, fig.height=3.5, fig.width=6, fig.align="center"}
+probabilities.H0 <- c(dpois(0:5, 2.02), 1-ppois(5,2.02))
+names(probabilities.H0) <- c(as.character(0:5), ">5")
+print(probabilities.H0)
+expected.trucks <- 500*probabilities.H0
+print(expected.trucks)
+barplot(t(cbind(expected.trucks,observed.trucks)), beside = TRUE,
+        ylab="Frequency", main = "expected (mean = sample estimate) vs observed trucks")
+legend("topright", legend = c("expected", "observed"), fill=gray.colors(2))
+
+```
+
+In this case we must manually compare the \(\chi^2\)-statistic to the quantiles as \texttt{R} will by default have one degree of freedom too much. We can still use the built-in routine to calculate the statistic but we don't (ever) have to. We don't reject in either of the two cases (corrected and uncorrected degrees of freedom).
+
+```{r}
+chisq.test(x = observed.trucks, p = probabilities.H0) # uncorrected
+chisq.statistic <- sum((observed.trucks-expected.trucks)^2/expected.trucks)
+df.uncorrected <- length(observed.trucks)-1
+print(chisq.statistic) # compare this to X-squared in the above
+p.value.chisq <- pchisq(chisq.statistic, df = df.uncorrected, lower.tail = FALSE)
+print(p.value.chisq) # compare this to p-value
+# corrected test
+chisq.statistic <- sum((observed.trucks-expected.trucks)^2/expected.trucks)
+print(chisq.statistic) # statistic is unchanged
+p.value.chisq <- pchisq(chisq.statistic, df = df.uncorrected-1, lower.tail = FALSE)
+print(p.value.chisq) # compare this to above p-value (it is smaller)
+```
+
+\textbf{Solution 1 (b):} Since we didn't reject the null hypothesis of having a \(\mathsf{Poisson}(2.02)\) distribution we can assume this is the truth. Under that assumption we find for the probability of it being at least 9
+```{r}
+paste("The probability of having 9 or more arrivals in one hour is",
+      round(100*(1-ppois(8, lambda = 2.02)), digits = 4), "%", sep = " ")
+```
+
+\newpage
+\HRule\newline
+\textbf{Exercise 2:} The number of trucks arriving at a warehouse in over 500 one hour interval has
+been recorded. Counts of zero up to eight arrivals are recorded respectively
+on 52, 151, 130, 102, 45, 12, 5, 1 and 2 occasions. Test the hypothesis that these
+have a Poisson distribution and estimate how often there will be nine or more
+arrivals per hour.
+
+\vspace{6pt}\hrule
+\textbf{Solution 2:} As before the exercise doesn't specify a parameter for the \(\mathsf{Exponential}\) distribution. In principle we are free to do whatever we deem appropriate. Since we have binned data we cannot take simply the average in order to estimate the mean which means that you don't know how to properly fit a parameter to this data (rest assured - there are ways to do this!) we will simply guess the value \(\lambda = \frac{1}{20}\). After "fit-by-guess" we perform the same steps as before
+
+```{r, fig.height=3.5, fig.width=6, fig.align="center"}
+# observed data
+observations <- c(63,25,14,7,6+3+2)
+# probabilities for the bins under H0
+lower.bin <- seq(from = 0, by = 15, length.out = 5)
+upper.bin <- c(seq(from = 15, by = 15, length.out = 4), Inf)
+prob.exp <- pexp(upper.bin, rate = 1/20)-pexp(lower.bin, rate = 1/20)
+names(prob.exp) <- paste(lower.bin, upper.bin, sep = " - ")
+print(prob.exp)
+barplot(t(cbind(prob.exp*sum(observations),observations)), beside = TRUE,
+        ylab="Frequency", main = "expected (mean = 20) vs observed")
+legend("topright", legend = c("expected", "observed"), fill=gray.colors(2))
+```
+
+
+We can now perform the standard test with the built-in routine. We do not reject the null hypothesis of having an exponential distribution with rate \(\lambda = \frac{1}{20}\), i.e. mean 20.
+
+```{r}
+chisq.test(x = observations, p = prob.exp)
+```
+
+
+
+\newpage
+\HRule\newline
+\textbf{Exercise 3:} Cars produced at a factory are chosen at random for a thorough inspection.
+The number inspected and the number found to be unsuitable for shipment
+each month is as follows [see Workbook for table!]. Is there any significant variation in quality throughout the year?
+
+\vspace{6pt}\hrule
+\textbf{Solution 3:} We will do the test by hand and in \texttt{R} in order to see what is actually going on. Note that the inspected cars contain the sum of defective cars and non-defective ones. The contingency table that we need for the test will contain defective and non-defective ones so this needs to be adjusted.
+
+```{r}
+inspected.cars <- c(450,550,550,400,600,450,450,200,450,600,600,550)
+defective.cars <- c(8,14,6,3,7,8,16,5,12,6,15,9)
+M <- as.table(cbind(defective.cars, inspected.cars-defective.cars))
+dimnames(M) <- list(month = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+                    status = c("defective", "non-defective"))
+                    
+chisq.test.cars <- chisq.test(M)
+print(chisq.test.cars)
+
+# manually calculation it
+Total.cars <- sum(inspected.cars)
+r.count <- inspected.cars # monthly counts
+c.count <- c(sum(defective.cars), 
+             sum(inspected.cars - defective.cars)) # total (non-)defective 
+count.product <- outer(r.count, c.count)
+X.squards.statistic <- sum((M-count.product/Total.cars)^2/(count.product/Total.cars))
+print(X.squards.statistic)
+df.cars.contingency <- (length(r.count)-1) * (length(c.count)-1)
+print(df.cars.contingency)
+P.cars.contingency <- 1-pchisq(X.squards.statistic, df = df.cars.contingency)
+print(P.cars.contingency)
+
+
+# # obtain expected and residual matrices
+# # expected
+# chisq.test.cars$expected
+# count.product/Total.cars
+# 
+# # residuals
+# chisq.test.cars$residuals
+# (M-count.product/Total.cars)/sqrt(count.product/Total.cars)
+```
+
+at 5% we will reject the homogeneity hypothesis.
+
+\newpage
+\HRule\newline
+\textbf{Exercise 4:} The increased availability of light, high strength, materials has revolutionised the
+design and manufacture of drivers for playing golf. Clubs with hollow heads and
+thin faces result in much longer tee shots due to improved transfer of momentum
+between the club and the ball. The momentum transfer is measured using the coef-
+ficient of restitution (the ratio between the velocity of the club and the velocity of
+the ball).
+In an experiment 15 clubs (of the same type, from the same manufacturer) were
+selected at random and their coefficient of restitution measured. The measurements
+were taken by firing a standard golf ball from an air cannon (so the spin and incident
+velocity could be precisely controlled) at the face of the club (held firmly in a clamp)
+and measuring the exit velocity. Determine if there is statistical evidence to sup-
+port the manufactures claim that the coefficient of restitution is greater than 0.82.
+[Remember to check that the data is normally distributed.]
+
+\vspace{6pt}\hrule
+\textbf{Solution 4:} We use \texttt{R} in order to see whether the data is normally distributed first.
+
+```{r}
+data.set <- c(0.8411,0.8191,0.8182,0.8125,0.8750,
+              0.8580,0.8532,0.8483,0.8276,0.7983,
+              0.8042,0.8730,0.8282,0.8359,0.8660)
+# test normality first
+shapiro.test(data.set) # qqnorm(data.set) and qqline(data.set) might be useful
+```
+
+Since we didn't reject normality we can perform a t-test. Note that if we had rejected that the data has a \(\mathsf{Normal}\) distribution this would be inconsistent (that means you shouldn't do that!). Since we didn't we can use \texttt{R} to perform the test.
+
+In hypothesis testing, there is always the question what the null hypothesis should be. In some ases there can be a natural choice but in some cases there isn't. In principle, there is no single right answer to that. Many times the null hypothesis is chosen such that a test exists, i.e. we are happy that we can test anything at all. A general guidline is that one should try to choose the null hypothesis in such a way that the type I error (reject \(H_0\) when true) is worse than the type II error (accept \(H_0\) when false) because the former is controlled by the significance level \(\alpha\) and the latter is often hard to determine (it can, and often is, be quite large!). In the present case we pick (and reject)
+\begin{align*}
+  H_0: \mu \leq 0.82 \qquad \qquad H_1: \mu > 0.82
+\end{align*}
+
+```{r}
+t.test(data.set, mu = 0.82, alternative = "greater")
+```
+
+From the output we see that there is enough evidence to reject \(H_0\) at 5% significance.
+
+\newpage
+\HRule\newline
+\textbf{Exercise 4:} Two catalysts are being tested to determine how they affect the yield of a particular
+chemical process. Currently catalyst1 is being used but catalyst2 is cheaper and will
+save the company a lot of money if it does not affect the process yield. A series of
+test runs have been conducted using a pilot plant and the data is shown in Table 3.4,
+test the hypothesis that the choice of catalyst dose not affect the yield. Since all the
+test runs were conducted in the same plant under the same conditions (except for
+the choice of catalysts) you may assume equal variances. You should make the test
+using categorised data in a data-frame. [See Workbook for table!].
+
+
+\vspace{6pt}\hrule
+\textbf{Solution 4:} We first get the data into \texttt{R}. After that we test the hypothesis that 
+\begin{align*}
+  H_0:\mu_1 = \mu_2 \qquad \qquad H_1: \mu_1 \neq \mu_2
+\end{align*}
+
+```{r, fig.height=3.5, fig.width=6, fig.align="center"}
+Catalyst.data <- c(91.50, 89.19, 94.18, 90.95, 92.18, 
+                   90.46, 95.39, 93.21, 91.79, 97.19, 
+                   89.07, 97.04, 94.72, 91.07, 89.21, 92.75)
+Catalyst.category <- rep(c(1,2), times = 8)
+test.data <- data.frame(cbind(Catalyst.category, Catalyst.data))
+boxplot(test.data$Catalyst.data ~ test.data$Catalyst.category)
+# specify equal variances
+t.test(test.data$Catalyst.data ~ test.data$Catalyst.category, var.equal = TRUE)
+
+```
+
+We conclude that there is no sufficient evidence to reject the null hypothesis that both catalysts perform equally. However, in the given situation it might be actually "safer" to test another hypothesis. If the company is thinking about replacing a working solution, then they want to be sure that the replacement won't cause problems, i.e. decrease the yield, as this might cost them a lot more money than they will save. Instead of testing the above hypothesis we could also test the hypothesis that whether catalyst 2 affect the yield negatively. In order to be on the safe side we pick
+
+\begin{align*}
+  H_0:\mu_1 \geq \mu_2 \qquad \qquad H_1: \mu_1 < \mu_2
+\end{align*}
+
+```{r}
+t.test(test.data$Catalyst.data ~ test.data$Catalyst.category, 
+       var.equal = TRUE, alternative = "less")
+```
+
+This hypothesis cannot be rejected either at 5% significance level. Note that in the first case we would have replaced the catalyst whereas in the second case we would assume that catalyst two is worse than the current solution and we wouldn't replace catalyst 1 by it. As we see in this example, the decisions we make based on hypothesis tests are highly dependent on the hypotheses. Those should be specified according to the (real world) risk associated with the type I and type II errors whenever this is feasible.
+
+
+\newpage
+\HRule\newline
+\textbf{Exercise 4:} An article in the Journal of Strain Analysis (1983, vol 18, no 2) compares several meth-
+ods for predicting the shear strength of a steel plate girder. Data for the Karlsruhe
+and Lehigh methods are shown bellow applied to nine specific girders. Is there, on
+average, any statistically significant difference between the two methods? [See Workbook for table!].
+
+\vspace{6pt}\hrule
+\textbf{Solution 4:} We first get the data into \texttt{R}.
+
+```{r}
+strength.data <- c(1.186, 1.061, 1.151, 0.992, 1.322, 1.063, 1.339, 1.062, 1.200,
+                   1.065, 1.402, 1.178, 1.365, 1.037, 1.537, 1.086, 1.559, 1.052)
+
+strength.data <- matrix(strength.data, byrow = TRUE, ncol = 2)
+# print(strength.data)
+boxplot(strength.data) # boxplot suggests different means !!
+t.test(strength.data[,1], strength.data[,2], paired = TRUE)
+```
+
+
+We conclude that there is sufficient statistical evidence to conclude that there is a difference between two methods.
+
+
+
+\newpage
+
+\HRule\newline
+\textbf{Example of a 2-way ANOVA (incl. formulas):} This fully worked out example is maily there to provide you with the basic formulas and ideas behind ANOVA. Consider the example on page 59 of the Workbook. We can get the data in \texttt{R} by typing it in manually using the values provided in the table.
+```{r}
+FeedStock <- rep(c("I","II","III","IV","V"), each = 2, times = 3)
+Process <- rep(c("A","B","C"), each = 10)
+Process.FeedStock <- paste(Process, FeedStock, sep ="-")
+Yield <- c(106,110,95,100,94,107,103,104,100,102,110,112,98,99,100,
+           101,108,112,105,107,94,97,86,87,98,99,99,101,94,98)
+full.chem.data <- data.frame(FeedStock = factor(FeedStock),
+                             Process = factor(Process),
+                             Yield = Yield)
+full.chem.data # we can have a look at it
+```
+
+We can produce an ANOVA table easily from that
+
+```{r}
+anova(chemmod <- lm(Yield~FeedStock+Process+FeedStock:Process))
+```
+
+But how did we arrive at these values? In order to understand what a 2-way ANOVA analysis is and how it works it might be useful to look at the formulas that \texttt{R} used to arrive at these values.
+\vspace{6pt}\hrule
+\textbf{Sum of squares partitioning:} The key in ANOVA are different types of "sums of squares". Let's start by defining the following averages
+\begin{align*}
+  \bar{y}_{\bullet i} &=  \frac{1}{\vert \mathcal{J} \vert } \sum_{j \in \mathcal{J}} \frac{1}{\vert \mathcal{K}_{ij}\vert} \sum_{k \in \mathcal{K}_{ij}} y_{ijk}  \\
+  \bar{y}_{j_k \bullet} &= \frac{1}{\vert \mathcal{I} \vert } \sum_{i \in \mathcal{I}} \frac{1}{\vert \mathcal{K}_{ij}\vert} \sum_{k \in \mathcal{K}_{ij}} y_{ijk}  \\
+  \bar{y}_{i j} &= \frac{1}{\vert \mathcal{K}_{ij}\vert} \sum_{k \in \mathcal{K}_{ij}} y_{ijk}  
+\end{align*}
+
+\HRule\newline
+\textbf{Exercise 4:}  In Dr Tom Bruce's experiments on sea walls (see Section 1.12) the mean over-topping rate was measured on a model sea wall with 13 different types of armour unit. ]
+
+(a) Use 1-way ANOVA to answer the questions "Does the armour unit
+affect the overtopping volume?". You should use a linear model based on
+\[
+  \log(q_{ij}) = \mu + U_{i} + \varepsilon_{ij}
+\]
+where \(U_i\) is the effect of armour unit type, \(i\) and \(\varepsilon_{ij}\) is the error.
+
+(b) Repeat the analysis also including the relative crest height, \(R^*\), as a predictor,
+using 2-way ANOVA and the linear model
+\[
+  \log(q_{ij}) = \mu + U_{i} + R^* + \varepsilon_{ij}
+\]
+
+
+\vspace{6pt}\hrule
+\textbf{Solution 4:} We first get the data into \texttt{R}.
+
+```{r}
+clash.data <- clash.2d[clash.2d$q..cumecs. > 0,]
+lm.clash <- lm(log(clash.data$q..cumecs.) ~ clash.data$Structure)
+summary(aov(lm.clash))
+```
+
+
+```{r}
+lm.clash <- lm(log(clash.data$q..cumecs.) ~ clash.data$Structure*as.factor(clash.data$Rc))
+anova(lm.clash)
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
