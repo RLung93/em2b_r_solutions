@@ -15,14 +15,18 @@ setwd('/home/rob/Documents/repos/em2b_r_solutions')
 pistonrings <- read.table("PistonRings.dat", header=TRUE)
 waves <- read.csv("WaveTest01.csv", header=TRUE)
 clash.2d <- read.csv("CLASH-2D.csv", header=TRUE)
+require(plotrix)
 require(printr)
 ```
 
-This document contains solutions to the exercises from the \texttt{R} Workbook for EM2B in 2018/19. For many exercises there are alternative solutions that give slightly different answers that can be just as good or even better. Any typos or suggestions regarding this document should be directed to \href{mailto:s1778022@sms.ed.ac.uk}{s1778022@sms.ed.ac.uk}.
+This document contains solutions to the exercises from the \texttt{R} Workbook for EM2B in 2018/19. They are not written by the composers of the exercises and while I hope this is not the case on too many occasions it is perfectly possible that some parts of the exercises have been misunderstood by me and are meant to be solved in a different way. For many exercises there are alternative solutions that give slightly different answers that can be just as good or even better. That means, if you did it differently it might not be a mistake but rather an alternative solution. Any typos, serious errors or suggestions regarding this document can be directed to \href{mailto:s1778022@sms.ed.ac.uk}{s1778022@sms.ed.ac.uk}.
+
+This note has been created using R-Markdown (and the source file should be available) and compiled to a PDF with \LaTeX. R-studio does this automatically but in order to produce a PDF document from a .Rmd file you need to have \LaTeX installed on your system. This can be a good way for you to write you homework report. If you decide to do that we can help you in the tutorials with it. If you don't want to install \LaTeX on you machine to produce the PDF you can always compile the document to a HTML file and at the end do the final compilation to PDF on a University machine (e.g. in the computing labs) which have \LaTeX installed on them. Of course, you can decide to write the report in another way.
 
 # Chapter 1
-tbd
+I have not included solutions to the exercises of this chapter in this note. There are many great \textbf{free} online learning ressources available today (even though the free MOOC trend is taking a slight turn). In particular, for learning the basics of a programming language this can be good way to go if you want to learn some more \texttt{R}. Of course, you can always ask your question regarding \texttt{R} in the tutorials (that's why we have them). These notes are mainly meant to guide you through the statistical part assisted by the \texttt{R} lenaguage.
 \newpage
+
 # Chapter 2
 
 ## Discrete Distributions
@@ -42,6 +46,10 @@ barplot(dbinom(0:6, size = 400, prob = 1/365),
         xlab = "students born on a particular day", 
         main = "distribution of birthdays")
 ```
+
+Note that this is not the probability that there are two people with the same birthday! For 400 individuals it is trivial that
+\[\mathbb{P}(\text{two out of 400 individuals are born on the same day})=1\]
+The above probability for less than 365 individuals is non-trivial and studied in what is called the \href{https://en.wikipedia.org/wiki/Birthday_problem}{Birthday Problem/Paradox} (at a party with 30 people there will be two born on the same day about 70% of the time).
 
 \newpage
 \HRule\newline
@@ -196,13 +204,13 @@ distribution has no memory!]
 \[
 \text{failure rate} = \frac{1}{10h}
 \]
-where \(h\) denotes hours. Admittedly, it is not absolutely clear what is meant by PDF of reliability but since we only have one distribution to work with we can pretty much narrow it down to what is has to be.
+where \(h\) denotes hours. Admittedly, it is not absolutely clear what is meant by PDF of reliability but since we only have one distribution to work with we can pretty much guess what is has to be.
 
 ```{r, fig.height=3.5, fig.width=6, fig.align="center"}
 curve(dexp(x, rate = 1/10), 0, 30, ylab = "density", xlab = "x")
 ```
 
-In the \texttt{R} workbook the y-axis is labelled with "probability" (see e.g. Figure 2.5, which displays rate 1 and not 1/8, and Figure 2.6 therein). This shouldn't be done. Unlike in the discrete case, the value of the density cannot be interpreted as a probability since probability densities are not bounded by 1 in general.
+In the \texttt{R} workbook the y-axis is labelled with "probability" (see e.g. Figure 2.5, which displays rate 1 and not 1/8, and Figure 2.6 therein). This isn't the best practice because unlike in the discrete case, the value of the density cannot be interpreted as a probability since probability densities are not bounded by 1 in general.
 
 \textbf{Solution (b):} In the setting from before let \(\tau\) be the time until breakdown (in hours). Then \(\tau \sim \mathsf{Exponential}(\frac{1}{10})\) and the sought quantity is 
 \[
@@ -226,7 +234,7 @@ pexp(4, rate = 1/10, lower.tail = FALSE)
 taken in the EngInn have a mean of 20 degrees Celcius and a standard deviation of 1.8 degrees Celsius. Their understanding of instrumentation leads
 them to believe these values will be normally distributed. What range of temperatures should the expect 95% of the time?
 \vspace{6pt}\hrule
-\textbf{Solution:} The failure rate is the reciprocal mean so we get 
+\textbf{Solution:} Since we know the distribution of the temperature we can obtain confidence interval right away in \texttt{R}
 
 ```{r, fig.height=3.5, fig.width=6, fig.align="center"}
 CI.95 <- qnorm(c(0.025, 0.975), mean = 20, sd = 1.8)
@@ -263,7 +271,7 @@ for \(X \sim \mathsf{Normal}(20, 1.8^2)\).
 pnorm(24, mean = 20, sd = 1.8, lower.tail = FALSE)
 60*pnorm(24, mean = 20, sd = 1.8, lower.tail = FALSE)
 ```
-Assuming that the term has 12 weeks and 5 working days each week we have that the expected number of days is \(60 \times \mathbb{P}(X > 24) \approx 0.79\). More generally, assuming that the exceedances are independent on each day (which isn't necessarily realistic), the number of days \(D\) that this happens satisfies
+Assuming that the term has 12 weeks and 5 working days each week (whatever numbers you take here is fine) we have that the expected number of days is \(60 \times \mathbb{P}(X > 24) \approx 0.79\). More generally, assuming that the exceedances are independent on each day (which isn't necessarily realistic), the number of days \(D\) that this happens satisfies
 \[
 D \sim \mathsf{Binomial}(60, 0.0131)
 \]
@@ -279,7 +287,7 @@ barplot(dbinom(0:6, size = 60, prob = 0.0131),
 \HRule\newline
 \textbf{Exercise 4:} Is the piston ring diameter data normally distributed?
 \vspace{6pt}\hrule
-\textbf{Solution 4:} Let's examince the normal Q-Q plot for that
+\textbf{Solution:} Let's examince the normal Q-Q plot for that
 ```{r, fig.asp=1, fig.height=4, fig.width=4, fig.align="center"}
 qqnorm(pistonrings$diameter)
 qqline(pistonrings$diameter)
@@ -322,7 +330,7 @@ arrivals per hour.
 (52*0 + 151*1 + 130*2 + 102*3 + 45*4 + 12*5 + 5*6 + 1*7 + 2*8) / 500
 ```
 
-and we could test whether the data fits a \(\mathsf{Poisson}(2.02)\) distribution. \textbf{BUT} we have estimated a parameter from the data so we loose one degree of freedom (don't worry if that sounds new to you - it hasn't been treated in class as far as I know). This situation is briefly described in the book on page 947. Another issue is that the built-in \texttt{R} routine doesn't have a way to handle this (since it can't possibly know what we have estimated from the data there isn't really a way to implement this...). Let's first consider the situation where an oracle told us that the parameter we should consider is \(\lambda_0 = 2.5\). We can group the last three observations into a "\(> 5\)"- bin and calculate probabilities
+and we could test whether the data fits a \(\mathsf{Poisson}(2.02)\) distribution. \textbf{BUT} we have estimated a parameter from the data so we loose one degree of freedom (don't worry if that sounds new to you - it hasn't been treated in class as far as I know). This situation is briefly described in the book on page 947. Another issue is that the built-in \texttt{R} routine doesn't have a way to handle this (since it can't possibly know what we have estimated from the data there isn't really a way to implement this). Let's first consider the situation where an oracle told us that the parameter we should consider is \(\lambda_0 = 2.5\). We can group the last three observations into a "\(> 5\)"- bin and calculate probabilities
 
 ```{r, fig.height=3.5, fig.width=6, fig.align="center"}
 observed.trucks <- c(52, 151, 130, 102, 45, 12, 5 + 1 + 2)
@@ -379,14 +387,15 @@ paste("The probability of having 9 or more arrivals in one hour is",
 
 \newpage
 \HRule\newline
-\textbf{Exercise 2:} The number of trucks arriving at a warehouse in over 500 one hour interval has
-been recorded. Counts of zero up to eight arrivals are recorded respectively
-on 52, 151, 130, 102, 45, 12, 5, 1 and 2 occasions. Test the hypothesis that these
-have a Poisson distribution and estimate how often there will be nine or more
-arrivals per hour.
+\textbf{Exercise 2:}  Traffic is passing freely along a section of the A702, well away from traffic
+lights, and the interval (in seconds) between successive vehicles has been mea-
+sured by a roadside sensor as follows [see Workbook for table]:
+(a) Fit an exponential distribution to the data
+(b) Test to see if the exponential distribution explains the time interval be-
+tween cars.
 
 \vspace{6pt}\hrule
-\textbf{Solution 2:} As before the exercise doesn't specify a parameter for the \(\mathsf{Exponential}\) distribution. In principle we are free to do whatever we deem appropriate. Since we have binned data we cannot take simply the average in order to estimate the mean which means that you don't know how to properly fit a parameter to this data (rest assured - there are ways to do this!) we will simply guess the value \(\lambda = \frac{1}{20}\). After "fit-by-guess" we perform the same steps as before
+\textbf{Solution:} As before the exercise doesn't specify a parameter for the \(\mathsf{Exponential}\) distribution. Rather than that it even asks us to fit a parameter to the data. In principle we are free to do whatever we deem appropriate. Since we have binned data we cannot take simply the average in order to estimate the mean which means that you don't know how to properly fit a parameter to this data (there are ways to do this!) we will simply guess the value \(\lambda = \frac{1}{20}\). After "fit-by-guess", which we assume doesn't come from the data but rather common sense (so we don't remove a degree of freedom), we perform the same steps as before
 
 ```{r, fig.height=3.5, fig.width=6, fig.align="center"}
 # observed data
@@ -418,7 +427,7 @@ The number inspected and the number found to be unsuitable for shipment
 each month is as follows [see Workbook for table!]. Is there any significant variation in quality throughout the year?
 
 \vspace{6pt}\hrule
-\textbf{Solution 3:} We will do the test by hand and in \texttt{R} in order to see what is actually going on. Note that the inspected cars contain the sum of defective cars and non-defective ones. The contingency table that we need for the test will contain defective and non-defective ones so this needs to be adjusted.
+\textbf{Solution:} We will do the test by hand and in \texttt{R} in order to see what is actually going on. Note that the inspected cars contain the sum of defective cars and non-defective ones. The contingency table that we need for the test will contain defective and non-defective ones so this needs to be adjusted (if you assumed that the tested mean tested and non-defective that's fine too).
 
 ```{r}
 inspected.cars <- c(450,550,550,400,600,450,450,200,450,600,600,550)
@@ -431,7 +440,7 @@ dimnames(M) <- list(month = c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
 chisq.test.cars <- chisq.test(M)
 print(chisq.test.cars)
 
-# manually calculation it
+# manually calculating it
 Total.cars <- sum(inspected.cars)
 r.count <- inspected.cars # monthly counts
 c.count <- c(sum(defective.cars), 
@@ -444,7 +453,6 @@ print(df.cars.contingency)
 P.cars.contingency <- 1-pchisq(X.squards.statistic, df = df.cars.contingency)
 print(P.cars.contingency)
 
-
 # # obtain expected and residual matrices
 # # expected
 # chisq.test.cars$expected
@@ -455,7 +463,7 @@ print(P.cars.contingency)
 # (M-count.product/Total.cars)/sqrt(count.product/Total.cars)
 ```
 
-at 5% we will reject the homogeneity hypothesis.
+at 5% we will reject the homogeneity hypothesis but at 1% we will not.
 
 \newpage
 \HRule\newline
@@ -474,7 +482,7 @@ port the manufactures claim that the coefficient of restitution is greater than 
 [Remember to check that the data is normally distributed.]
 
 \vspace{6pt}\hrule
-\textbf{Solution 4:} We use \texttt{R} in order to see whether the data is normally distributed first.
+\textbf{Solution:} We use \texttt{R} in order to see whether the data is normally distributed first.
 
 ```{r}
 data.set <- c(0.8411,0.8191,0.8182,0.8125,0.8750,
@@ -495,61 +503,17 @@ In hypothesis testing, there is always the question what the null hypothesis sho
 t.test(data.set, mu = 0.82, alternative = "greater")
 ```
 
-From the output we see that there is enough evidence to reject \(H_0\) at 5% significance.
+From the output we see that there is enough evidence to reject \(H_0\) at 5% significance, i.e. to support the claim of the manufacturer.
 
 \newpage
 \HRule\newline
-\textbf{Exercise 4:} Two catalysts are being tested to determine how they affect the yield of a particular
-chemical process. Currently catalyst1 is being used but catalyst2 is cheaper and will
-save the company a lot of money if it does not affect the process yield. A series of
-test runs have been conducted using a pilot plant and the data is shown in Table 3.4,
-test the hypothesis that the choice of catalyst dose not affect the yield. Since all the
-test runs were conducted in the same plant under the same conditions (except for
-the choice of catalysts) you may assume equal variances. You should make the test
-using categorised data in a data-frame. [See Workbook for table!].
-
-
-\vspace{6pt}\hrule
-\textbf{Solution 4:} We first get the data into \texttt{R}. After that we test the hypothesis that 
-\begin{align*}
-  H_0:\mu_1 = \mu_2 \qquad \qquad H_1: \mu_1 \neq \mu_2
-\end{align*}
-
-```{r, fig.height=3.5, fig.width=6, fig.align="center"}
-Catalyst.data <- c(91.50, 89.19, 94.18, 90.95, 92.18, 
-                   90.46, 95.39, 93.21, 91.79, 97.19, 
-                   89.07, 97.04, 94.72, 91.07, 89.21, 92.75)
-Catalyst.category <- rep(c(1,2), times = 8)
-test.data <- data.frame(cbind(Catalyst.category, Catalyst.data))
-boxplot(test.data$Catalyst.data ~ test.data$Catalyst.category)
-# specify equal variances
-t.test(test.data$Catalyst.data ~ test.data$Catalyst.category, var.equal = TRUE)
-
-```
-
-We conclude that there is no sufficient evidence to reject the null hypothesis that both catalysts perform equally. However, in the given situation it might be actually "safer" to test another hypothesis. If the company is thinking about replacing a working solution, then they want to be sure that the replacement won't cause problems, i.e. decrease the yield, as this might cost them a lot more money than they will save. Instead of testing the above hypothesis we could also test the hypothesis that whether catalyst 2 affect the yield negatively. In order to be on the safe side we pick
-
-\begin{align*}
-  H_0:\mu_1 \geq \mu_2 \qquad \qquad H_1: \mu_1 < \mu_2
-\end{align*}
-
-```{r}
-t.test(test.data$Catalyst.data ~ test.data$Catalyst.category, 
-       var.equal = TRUE, alternative = "less")
-```
-
-This hypothesis cannot be rejected either at 5% significance level. Note that in the first case we would have replaced the catalyst whereas in the second case we would assume that catalyst two is worse than the current solution and we wouldn't replace catalyst 1 by it. As we see in this example, the decisions we make based on hypothesis tests are highly dependent on the hypotheses. Those should be specified according to the (real world) risk associated with the type I and type II errors whenever this is feasible.
-
-
-\newpage
-\HRule\newline
-\textbf{Exercise 4:} An article in the Journal of Strain Analysis (1983, vol 18, no 2) compares several meth-
+\textbf{Exercise 5:} An article in the Journal of Strain Analysis (1983, vol 18, no 2) compares several meth-
 ods for predicting the shear strength of a steel plate girder. Data for the Karlsruhe
 and Lehigh methods are shown bellow applied to nine specific girders. Is there, on
 average, any statistically significant difference between the two methods? [See Workbook for table!].
 
 \vspace{6pt}\hrule
-\textbf{Solution 4:} We first get the data into \texttt{R}.
+\textbf{Solution:} We first get the data into \texttt{R}.
 
 ```{r}
 strength.data <- c(1.186, 1.061, 1.151, 0.992, 1.322, 1.063, 1.339, 1.062, 1.200,
@@ -561,10 +525,49 @@ boxplot(strength.data) # boxplot suggests different means !!
 t.test(strength.data[,1], strength.data[,2], paired = TRUE)
 ```
 
+We conclude that there is sufficient statistical evidence to believe that there is a difference between the two methods in question.
 
-We conclude that there is sufficient statistical evidence to conclude that there is a difference between two methods.
+\newpage
+\HRule\newline
+\textbf{Exercise 6:} Two catalysts are being tested to determine how they affect the yield of a particular
+chemical process. Currently catalyst1 is being used but catalyst2 is cheaper and will
+save the company a lot of money if it does not affect the process yield. A series of
+test runs have been conducted using a pilot plant and the data is shown in Table 3.4,
+test the hypothesis that the choice of catalyst dose not affect the yield. Since all the
+test runs were conducted in the same plant under the same conditions (except for
+the choice of catalysts) you may assume equal variances. You should make the test
+using categorised data in a data-frame. [See Workbook for table!].
 
 
+\vspace{6pt}\hrule
+\textbf{Solution:} We first get the data into \texttt{R}. After that we could test the hypothesis whether 
+\begin{align*}
+  H_0:\mu_1 = \mu_2 \qquad \qquad H_1: \mu_1 \neq \mu_2
+\end{align*}
+
+```{r, fig.height=3.5, fig.width=6, fig.align="center"}
+Catalyst.data <- c(91.50, 89.19, 94.18, 90.95, 92.18, 
+                   90.46, 95.39, 93.21, 91.79, 97.19, 
+                   89.07, 97.04, 94.72, 91.07, 89.21, 92.75)
+Catalyst.category <- rep(factor(c(1,2)), times = 8)
+test.data <- data.frame(cbind(Catalyst.category, Catalyst.data))
+boxplot(test.data$Catalyst.data ~ test.data$Catalyst.category)
+# specify equal variances
+t.test(test.data$Catalyst.data ~ test.data$Catalyst.category, var.equal = TRUE)
+```
+
+We conclude that there is no sufficient evidence to reject the null hypothesis that both catalysts perform equally. However, in the given situation it might be actually "safer" to test another hypothesis. If the company is thinking about replacing a working solution, then they want to be sure that the replacement won't cause problems, i.e. decrease the yield, as this might cost them a lot more money than they will save. Instead of testing the above hypothesis we could also test the hypothesis whether catalyst 2 affect the yield negatively. In order to be on the safe side we pick
+
+\begin{align*}
+  H_0:\mu_1 \geq \mu_2 \qquad \qquad H_1: \mu_1 < \mu_2
+\end{align*}
+
+```{r}
+t.test(test.data$Catalyst.data ~ test.data$Catalyst.category, 
+       var.equal = TRUE, alternative = "less")
+```
+
+This hypothesis cannot be rejected either at 5% significance level. Note that in the first case we would have replaced the catalyst whereas in the second case we would assume that catalyst two is worse than the current solution and we wouldn't replace catalyst 1 by it. As we see in this example, the decisions we make based on hypothesis tests are highly dependent on the hypotheses. Those should be specified according to the (real world) risk associated with the type I and type II errors whenever this is feasible.
 
 \newpage
 
@@ -582,21 +585,106 @@ full.chem.data <- data.frame(FeedStock = factor(FeedStock),
 full.chem.data # we can have a look at it
 ```
 
+\newpage
 We can produce an ANOVA table easily from that
 
 ```{r}
 anova(chemmod <- lm(Yield~FeedStock+Process+FeedStock:Process))
 ```
 
-But how did we arrive at these values? In order to understand what a 2-way ANOVA analysis is and how it works it might be useful to look at the formulas that \texttt{R} used to arrive at these values.
+But how did we arrive at these values? In order to understand what a 2-way ANOVA analysis is and how it works it might be useful to look at the formulas that \texttt{R} used to arrive at these values. Let \(\mathcal{I} =\{\text{A},\text{B},\text{C}\}\) be the set of lables for the Process category and \(\mathcal{J} =\{\text{I},\text{II},\text{III},\text{IV},\text{V}\}\) the ones for the Feed Stock category. For any pair of lables \(i \in \mathcal{I}\) and \(j \in \mathcal{J}\), i.e. a fixes Process and Feed Stock label, we denote by \(\mathcal{K}_{ij}\) the set of observation, i.e. rows in the above table, with the right labels. In the given examples \(\mathcal{K}_{ij}\) always contains two elements. For \(i = \text{A}, j = \text{III}\) that would be the two rows with Yield \(94\) and \(107\). by \(\vert \cdot \vert\) we denote the cardinality of a set, i.e. the number of elements in it. We will assume that all \(\mathcal{K}_{ij}\) are of equal size.
 \vspace{6pt}\hrule
 \textbf{Sum of squares partitioning:} The key in ANOVA are different types of "sums of squares". Let's start by defining the following averages
 \begin{align*}
-  \bar{y}_{\bullet i} &=  \frac{1}{\vert \mathcal{J} \vert } \sum_{j \in \mathcal{J}} \frac{1}{\vert \mathcal{K}_{ij}\vert} \sum_{k \in \mathcal{K}_{ij}} y_{ijk}  \\
-  \bar{y}_{j_k \bullet} &= \frac{1}{\vert \mathcal{I} \vert } \sum_{i \in \mathcal{I}} \frac{1}{\vert \mathcal{K}_{ij}\vert} \sum_{k \in \mathcal{K}_{ij}} y_{ijk}  \\
+\bar{y}_{\bullet \bullet} &=  \frac{1}{\vert \mathcal{J} \vert } \sum_{j \in \mathcal{J}}\frac{1}{\vert \mathcal{I} \vert } \sum_{i \in \mathcal{I}} \frac{1}{\vert \mathcal{K}_{ij}\vert} \sum_{k \in \mathcal{K}_{ij}} y_{ijk}  \\
+  \bar{y}_{i \bullet} &=  \frac{1}{\vert \mathcal{J} \vert } \sum_{j \in \mathcal{J}} \frac{1}{\vert \mathcal{K}_{ij}\vert} \sum_{k \in \mathcal{K}_{ij}} y_{ijk}  \\
+  \bar{y}_{\bullet j} &= \frac{1}{\vert \mathcal{I} \vert } \sum_{i \in \mathcal{I}} \frac{1}{\vert \mathcal{K}_{ij}\vert} \sum_{k \in \mathcal{K}_{ij}} y_{ijk}  \\
   \bar{y}_{i j} &= \frac{1}{\vert \mathcal{K}_{ij}\vert} \sum_{k \in \mathcal{K}_{ij}} y_{ijk}  
 \end{align*}
+Next we can define the actual sums of squares. Unsurprisingly, all of them can be written as an actual sum of squares. Some of these formulas may not be very intuitive and you don't have to memorise them.
+\begin{align*}
+SS_{\text{tot}} &=  \sum_{j \in \mathcal{J}}\sum_{i \in \mathcal{I}} \sum_{k \in \mathcal{K}_{ij}} (y_{ijk} - \bar{y}_{\bullet \bullet})^2\\
+SS_{\bullet \mathcal{J}} &= \sum_{j \in \mathcal{J}}\sum_{i \in \mathcal{I}} \sum_{k \in \mathcal{K}_{ij}} (y_{\bullet j} - \bar{y}_{\bullet \bullet})^2\\
+SS_{\mathcal{I} \bullet} &= \sum_{j \in \mathcal{J}}\sum_{i \in \mathcal{I}} \sum_{k \in \mathcal{K}_{ij}} (y_{i\bullet} - \bar{y}_{\bullet \bullet})^2\\
+SS_{\mathcal{I} \mathcal{J}} &= \sum_{j \in \mathcal{J}}\sum_{i \in \mathcal{I}} \sum_{k \in \mathcal{K}_{ij}} (\bar{y}_{ij} - \bar{y}_{i \bullet} - \bar{y}_{\bullet j} + \bar{y}_{\bullet \bullet})^2 \\
+SS_{\text{res}} &= \sum_{j \in \mathcal{J}}\sum_{i \in \mathcal{I}} \sum_{k \in \mathcal{K}_{ij}} (y_{ijk} - \bar{y}_{ij})^2
+\end{align*}
+It is always true that the total sum of squares is the sum of the other, i.e.
+\[
+  SS_{\text{tot}} = SS_{\bullet \mathcal{J}} + SS_{\mathcal{I} \bullet} + SS_{\mathcal{I} \mathcal{J}} + SS_{\text{res}}
+\]
+and that these sums of squares (which are of course realisations of random variables) satisfy certain independence relations under certain null hypotheses that allow us to make the test which we make. If you are interested (but you don't need to know this), the basis for all of this ANOVA theory is \href{https://en.wikipedia.org/wiki/Cochran%27s_theorem}{Cochran's Theorem}.
 
+\vspace{6pt}\hrule
+\textbf{Degrees of freedom:} The next quantity that appears in the ANOVA table is the degrees of freedom. They are exactly the degrees of freedom associated to the \(\chi^2\) random variables that form the sums of squares. Let \(M = \vert \mathcal{J}\vert, N = \vert \mathcal{I}\vert , K = \vert \mathcal{K}_{ij} \vert\). Recall that all \(\mathcal{K}_{ij} \vert\) were assumed to have equal size. They can be calculated as follows
+\begin{align*}
+df_{\text{tot}} &=  MNK - 1\\
+df_{\bullet \mathcal{J}} &= N - 1\\
+df_{\mathcal{I} \bullet} &= M - 1\\
+df_{\mathcal{I} \mathcal{J}} &= MN - (df_{\bullet \mathcal{J}}+df_{\mathcal{I} \bullet}) - 1 \\
+df_{\text{res}} &= MNK - MN
+\end{align*}
+As was the case with the sums of squares, the degrees of freedom also sum to their total amount, i.e.
+\[
+  df_{\text{tot}} = df_{\bullet \mathcal{J}} + df_{\mathcal{I} \bullet} + df_{\mathcal{I} \mathcal{J}} + df_{\text{res}}
+\]
+
+\textbf{The Mean Square:} The mean square is nothing other than a normalised sum of squares. The idea of ANOVA is to compora the magnitude of sums of squares. But the \(\chi^2\) distribution takes typically values around its degrees of freedom (which is nothing but their mean). In order to compare them objectively we need to normalise these quantities. This is what is formally done with the mean square. It is defined for each of the symbols above as
+\[MS = \frac{SS}{df}\]
+The total mean square can technically be defined but is usually left out because, unlike with the quantities before, it isn't the sum of all the others.
+\textbf{F Statistic and p-values:} As you can see in the table produced from \texttt{R} those are not defined for the residuals. The reason for that is evident from the formula. The F Statistic for each row is defined as
+\begin{align*}
+F_{\bullet \mathcal{J}} &= \frac{MS_{\bullet \mathcal{J}}}{MS_{\text{res}}}\\
+F_{\mathcal{I} \bullet} &= \frac{MS_{\mathcal{I} \bullet}}{MS_{\text{res}}}\\
+F_{\mathcal{I} \mathcal{J}} &= \frac{MS_{\mathcal{I} \mathcal{J}}}{MS_{\text{res}}}\\
+\end{align*}
+The F statstic for the residuals would always be equal to 1 (and that's silly) so one never writes it. The p-values are defined as always in hypothesis testing. The distribution of the F statistic is \(\mathsf{F}(df_{\circ},df_{\text{res}})\) distributed (yes, that's a distribution) where the symbol takes the three possible values \(\circ \in \{\bullet \mathcal{J}, \mathcal{I}\bullet,\bullet \bullet\}\).
+
+The below code gives you an example of how to produce the ANOVA table by hand with those formulas. As you can see the values match those produced by \texttt{R} precisely (except that we additionally have the total sum of squares in the last row).\newpage 
+```{r}
+# single SumOfSquares
+# decomposition
+CrossMeans <- rep(tapply(Yield, Process.FeedStock, mean), each = 2)
+ProcessMeans <- rep(tapply(Yield, Process, mean), each = 10)
+FeedStockMeans <- rep(tapply(Yield, FeedStock, mean), each = 2, times = 3)
+null.mean <- mean(Yield)
+
+SS.FeedStock <- sum((FeedStockMeans - null.mean)^2)
+df.FeedStock <- length(unique(FeedStock))-1
+MS.FeedStock <- SS.FeedStock/df.FeedStock
+
+SS.Process <- sum((ProcessMeans - null.mean)^2)
+df.Process <- length(unique(Process))-1
+MS.Process <- SS.Process/df.Process
+
+SS.Cross <- sum((CrossMeans - ProcessMeans - FeedStockMeans + null.mean)^2)
+df.Cross <- length(unique(Process.FeedStock)) - (df.FeedStock + df.Process) - 1
+MS.Cross <- SS.Cross/df.Cross
+
+SS.error <- sum((Yield - CrossMeans)^2)
+df.error <- length(Yield) - length(unique(Process.FeedStock))
+MS.error <- SS.error/df.error
+
+SS.total <- sum((Yield - mean(Yield))^2)
+df.total <- length(Yield) - 1
+  
+F.FeedStock <- MS.FeedStock/MS.error
+P.FeedStock <- 1-pf(F.FeedStock, df1 = df.FeedStock, df2 = df.error)
+F.Process <- MS.Process/MS.error
+P.Process <- 1-pf(F.Process, df1 = df.Process, df2 = df.error)
+F.Cross <- MS.Cross/MS.error
+P.Cross <- 1-pf(F.Cross, df1 = df.Cross, df2 = df.error)
+
+
+data.frame(SumOfSquares = c(SS.FeedStock, SS.Process, SS.Cross, SS.error, SS.total),
+           DegreesOfFreedom = c(df.FeedStock, df.Process, df.Cross, df.error, df.total),
+           MeanSquare = c(MS.FeedStock, MS.Process, MS.Cross, MS.error, NA),
+           FStatistic = c(F.FeedStock, F.Process, F.Cross, NA, NA),
+           PValue = c(P.FeedStock, P.Process, P.Cross, NA, NA))
+
+```
+
+\newpage
 \HRule\newline
 \textbf{Exercise 4:}  In Dr Tom Bruce's experiments on sea walls (see Section 1.12) the mean over-topping rate was measured on a model sea wall with 13 different types of armour unit. ]
 
@@ -615,21 +703,21 @@ using 2-way ANOVA and the linear model
 
 
 \vspace{6pt}\hrule
-\textbf{Solution 4:} We first get the data into \texttt{R}.
+\textbf{Solution 4 (a):} We first get the data into \texttt{R} and remove the zeros (since we can't take a logarithm of these) and fit a regression with structure only.
 
 ```{r}
 clash.data <- clash.2d[clash.2d$q..cumecs. > 0,]
 lm.clash <- lm(log(clash.data$q..cumecs.) ~ clash.data$Structure)
-summary(aov(lm.clash))
-```
-
-
-```{r}
-lm.clash <- lm(log(clash.data$q..cumecs.) ~ clash.data$Structure*as.factor(clash.data$Rc))
 anova(lm.clash)
 ```
 
+In part (b), the exercise ask us to do the regression without interaction. This makes a difference. If we want to use height as a category then we need to convert it to a factor before giving it to the regression. 
+```{r}
+lm.clash <- lm(log(clash.data$q..cumecs.) ~ clash.data$Structure+as.factor(clash.data$Rc))
+anova(lm.clash)
+```
 
+Given that output it seems as if the crest height has some influence on the overtopping but the structure doesn't.
 
 
 
